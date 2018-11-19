@@ -15,7 +15,8 @@ cameraParams = cameraParameters('IntrinsicMat',intrinsicsMat); % Store intrinsic
 path_images = 'data/data/images/init_texture'; % Path to the images folder
 dir_images = dir(fullfile(path_images,'*.jpg')); % Select .JPG files
 num_images = length(dir_images); % Number of images in folder
-
+orient_matrix = [];
+loc_matrix = [];
 image_coord_pts = NaN(num_vertex, 2);
 % Iterate over files
 for i = 1:num_images
@@ -25,6 +26,8 @@ for i = 1:num_images
     title('Mark corners and press Enter/Return to finish. If point not in image, select point outside the image');
     [x,y] = ginput(num_vertex); % Get a maximum of num_vertex corner points
     [height, width, ~]  = size(currentImage);
+    
+    cam_coord = zeros(num_images,3);
     
     num_points = length(x);
     cpy_ply_vertex = ply_vertex_coord;
@@ -48,5 +51,19 @@ for i = 1:num_images
             num_delete = num_delete +1;
         end
     end
+    [worldOrientation, worldLocation] = estimateWorldCameraPose(image_coord_cpy, cpy_ply_vertex, cameraParams,'MaxReprojectionError',10)
+    [rotationMatrix, translationVector] = cameraPoseToExtrinsics(worldOrientation, worldLocation);
+    orient_matrix = [orient_matrix;worldOrientation];
+    loc_matrix = [loc_matrix; worldLocation];
+    %cam_coord(i,:)=(cpy_ply_vertex * rotationMatrix) + translationVector;
     close(fig);
+end
+
+%% Plot points
+for i=1:num_images
+    plotCamera('Size', 0.05, 'Orientation', orient_matrix((i-1)*3+1:i*3,1:3), 'Location',...
+         loc_matrix(i,1:3));
+     xlim([-1,1])
+     ylim([-1, 1])
+     hold on 
 end

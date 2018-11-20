@@ -83,6 +83,7 @@ loc2 = loc_matrix(2,1:3);
 ori2 = orient_matrix(4:6,1:3);
 scatter_points = scatterPoints('DSC_9744.JPG',ori2,loc2,intrinsicsMat',ply_vertex_coord,ply_faces,[5,6,11,12,4,3]);
 scatter_points_merged = [scatter_points_merged;scatter_points];
+scatter3(scatter_points(:,1),scatter_points(:,2),scatter_points(:,3));
 2
 
 loc3 = loc_matrix(3,1:3);
@@ -120,5 +121,5 @@ ori8 = orient_matrix(22:24,1:3);
 scatter_points = scatterPoints('DSC_9750.JPG',ori8,loc8,intrinsicsMat',ply_vertex_coord,ply_faces,[7,8,11,12,5,6]);
 scatter_points_merged = [scatter_points_merged;scatter_points];
 8
-
+figure;
 scatter3(scatter_points_merged(:,1),scatter_points_merged(:,2),scatter_points_merged(:,3));

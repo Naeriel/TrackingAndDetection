@@ -1,4 +1,4 @@
-function scatter_points = scatterPoints(filename, R_t, C_t, K, vertex,face, faces_pick)
+function scatter_points = projectPoints(filename, R_t, C_t, K, vertex,face, faces_pick)
     I = imread(filename);
     I = single(rgb2gray(I));
     [f,d] = vl_sift(I);

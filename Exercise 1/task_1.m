@@ -75,15 +75,18 @@ end
 hold off
 
 %% SIFT Keypoints
-loc1 = loc_matrix(1,1:3);
-ori1 = orient_matrix(1:3,1:3);
+
+loc = loc_matrix(1,1:3);
+ori = orient_matrix(1:3,1:3);
 scatter_points_merged = projectPoints('DSC_9743.JPG',ori1,loc1,intrinsicsMat',ply_vertex_coord,ply_faces,[5,6,11,12]);
+
+1
 
 loc2 = loc_matrix(2,1:3);
 ori2 = orient_matrix(4:6,1:3);
 scatter_points = projectPoints('DSC_9744.JPG',ori2,loc2,intrinsicsMat',ply_vertex_coord,ply_faces,[5,6,11,12,4,3]);
 scatter_points_merged = [scatter_points_merged;scatter_points];
-scatter3(scatter_points(:,1),scatter_points(:,2),scatter_points(:,3));
+
 2
 
 loc3 = loc_matrix(3,1:3);
@@ -106,7 +109,7 @@ scatter_points_merged = [scatter_points_merged;scatter_points];
 
 loc6 = loc_matrix(6,1:3);
 ori6 = orient_matrix(16:18,1:3);
-scatter_points = projectPoints('DSC_9748.JPG',ori6,loc6,intrinsicsMat',ply_vertex_coord,ply_faces,[1,2,6,7,5,6]);
+scatter_points = projectPoints('DSC_9748.JPG',ori6,loc6,intrinsicsMat',ply_vertex_coord,ply_faces,[1,2,7,8,5,6]);
 scatter_points_merged = [scatter_points_merged;scatter_points];
 6
 

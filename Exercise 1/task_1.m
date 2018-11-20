@@ -1,3 +1,5 @@
+%% Task 1
+% Model preparation
 %% Camera Intrinsics & num vertex
 fx = 2960.37845; % focal length
 fy = fx;
@@ -52,7 +54,7 @@ for i = 1:num_images
         end
     end
     [worldOrientation, worldLocation] = estimateWorldCameraPose(image_coord_cpy, cpy_ply_vertex, cameraParams,'MaxReprojectionError',10)
-    [rotationMatrix, translationVector] = cameraPoseToExtrinsics(worldOrientation, worldLocation);
+   % [rotationMatrix, translationVector] = cameraPoseToExtrinsics(worldOrientation, worldLocation);
     orient_matrix = [orient_matrix;worldOrientation];
     loc_matrix = [loc_matrix; worldLocation];
     %cam_coord(i,:)=(cpy_ply_vertex * rotationMatrix) + translationVector;
@@ -71,3 +73,5 @@ for i=1:num_images
      hold on 
 end
 hold off
+
+%% SIFT Keypoints

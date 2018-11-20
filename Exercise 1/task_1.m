@@ -53,8 +53,8 @@ for i = 1:num_images
             num_delete = num_delete +1;
         end
     end
-    [worldOrientation, worldLocation] = estimateWorldCameraPose(image_coord_cpy, cpy_ply_vertex, cameraParams,'MaxReprojectionError',10)
-   % [rotationMatrix, translationVector] = cameraPoseToExtrinsics(worldOrientation, worldLocation);
+    [worldOrientation, worldLocation] = estimateWorldCameraPose(image_coord_cpy, cpy_ply_vertex, cameraParams,'MaxReprojectionError',10);
+    [rotationMatrix, translationVector] = cameraPoseToExtrinsics(worldOrientation, worldLocation);
     orient_matrix = [orient_matrix;worldOrientation];
     loc_matrix = [loc_matrix; worldLocation];
     %cam_coord(i,:)=(cpy_ply_vertex * rotationMatrix) + translationVector;

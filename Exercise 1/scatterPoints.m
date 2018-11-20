@@ -1,11 +1,8 @@
-function scatter_points = scatterPoints(filename, R_t,C,K,vertex,face,faces_pick)
+function scatter_points = scatterPoints(filename, R_t, C, K, vertex,face, faces_pick)
     I = imread(filename);
     I = single(rgb2gray(I));
-    [f,d] = vl_sift(I) ;
-    perm = randperm(size(f,2)) ;
-    sel = perm(1:5000) ;
-    f = f(:,sel);
-    R= R_t';
+    [f,d] = vl_sift(I);
+    R = R_t';
     
     m_nonhomo = f(1:2,1:size(f,2));
     homogenize_ones = ones(1,size(f,2));

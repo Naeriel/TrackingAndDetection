@@ -59,7 +59,10 @@ for i = 1:num_images
     close(fig);
 end
 
-%% Plot points
+%% Plot box and camera locations
+pcshow(ply_vertex_coord,'VerticalAxis','Y',...
+       'VerticalAxisDir','down','MarkerSize',200);
+hold on
 for i=1:num_images
     plotCamera('Size', 0.05, 'Orientation', orient_matrix((i-1)*3+1:i*3,1:3), 'Location',...
          loc_matrix(i,1:3));
@@ -67,3 +70,4 @@ for i=1:num_images
      ylim([-1, 1])
      hold on 
 end
+hold off

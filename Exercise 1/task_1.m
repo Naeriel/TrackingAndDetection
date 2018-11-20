@@ -12,7 +12,7 @@ intrinsicsMat = [fx 0 0; s fy 0; cx cy 1];
 cameraParams = cameraParameters('IntrinsicMat',intrinsicsMat); % Store intrinsics matrix 
 
 %% Load PLY model and image files
-[ply_vertex_coord, ] = read_ply('data/data/model/teabox.ply');
+[ply_vertex_coord, ply_faces] = read_ply('data/data/model/teabox.ply');
 
 path_images = 'data/data/images/init_texture'; % Path to the images folder
 dir_images = dir(fullfile(path_images,'*.jpg')); % Select .JPG files
@@ -75,3 +75,6 @@ end
 hold off
 
 %% SIFT Keypoints
+loc1 = loc_matrix(1,1:3);
+ori1 = orient_matrix(1:3,1:3);
+scatter_points_merged = scatterPoints('DSC_9743.JPG',ori1,loc1,intrinsicsMat,ply_vertex_coord,ply_faces,[5,6,11,12]);

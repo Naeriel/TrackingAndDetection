@@ -1,4 +1,4 @@
-function scatter_points = projectPoints(filename, R_t, C_t, K, vertex,face, faces_pick)
+function [scatter_points,descriptor_points] = projectPoints(filename, R_t, C_t, K, vertex,face, faces_pick)
     I = imread(filename);
     I = single(rgb2gray(I));
     [f,d] = vl_sift(I);
@@ -12,11 +12,12 @@ function scatter_points = projectPoints(filename, R_t, C_t, K, vertex,face, face
     [R, t] = cameraPoseToExtrinsics(R_t, C_t);
     Q = K * R'; % Remember to transpose rotation matrix (R)
     q = K * t';
-    C = (-Q^(-1)*q);
+    C = (-Q^(-1) * q);
     dir = Q^(-1) * m_homo;
     
     face_m = face + 1;
     scatter_points = [];
+    descriptor_points = [];
     
     % Iterate through points. If point intersects the triangle, store
     % coordinates
@@ -26,6 +27,7 @@ function scatter_points = projectPoints(filename, R_t, C_t, K, vertex,face, face
             for j = 1:size(INTERSECT,1)
                 if INTERSECT(j)
                     scatter_points = [scatter_points;XCOOR(j,[1:3])];
+                    descriptor_points = [descriptor_points,d(1:128,i)];
                 end
             end
         end

@@ -60,7 +60,7 @@ for i = 1:num_images
     %cam_coord(i,:)=(cpy_ply_vertex * rotationMatrix) + translationVector;
     close(fig);
 end
-
+clear i j k;
 %% Plot box and camera locations
 pcshow(ply_vertex_coord,'VerticalAxis','Y',...
        'VerticalAxisDir','down','MarkerSize',200);
@@ -73,13 +73,59 @@ for i=1:num_images
      hold on 
 end
 hold off
-
+clear i;
 %% SIFT Keypoints
+scatter_points_merged = [];
+descriptor_points_merged = [];
+centroid = [0.165 0.063 0.093]./2;
+ply_faces(9:10,:) = []; % triangles 9 and 10 are never visible
 
-loc1 = loc_matrix(1,1:3);
-ori1 = orient_matrix(1:3,1:3);
-[scatter_points_merged, descriptor_points_merged] = projectPoints('DSC_9743.JPG',ori1,loc1,intrinsicsMat',ply_vertex_coord,ply_faces,[5,6,11,12]);
-
+% Iterate over images
+for i = 1:num_images
+    I = imread(dir_images(i).name);
+    I = single(rgb2gray(I));
+    [f,d] = vl_sift(I);
+    descriptor_points = [];
+    select_faces = ply_faces;
+    
+    cameraVector = centroid - loc_matrix(i,1:3);
+   
+    
+    out_list = [];
+    
+    % Select visible faces for each image
+    for j = length(ply_faces)
+        vector1 = ply_vertex_coord(ply_faces(j,2)+1,:) - ply_vertex_coord(ply_faces(j,1)+1,:);
+        vector2 = ply_vertex_coord(ply_faces(j,3)+1,:) - ply_vertex_coord(ply_faces(j,1)+1,:);
+        normal = cross(vector1,vector2);
+        cos_angle = dot(cameraVector,normal)/(norm(cameraVector)*norm(normal));
+        angle_degrees = acosd(cos_angle);
+        if angle_degrees < 100
+            out_list = [out_list;j];
+        end
+    end
+    select_faces(out_list,:) = [];
+    
+    % Collect scattering points and descriptor points
+    current_location = loc_matrix(i,:);
+    current_orientation = orient_matrix((i-1)*3+1:i*3,1:3);
+    for j = (1:size(facestemp,1))
+        [scatter_points, descriptor_points] = projectPoints(f,d,current_orientation,current_location,intrinsicsMat',ply_vertex_coord,ply_faces,select_faces(j,:) + 1);
+        size(scatter_points,1);
+        scatter_points_merged = [scatter_points_merged; scatter_points];
+        descriptor_points_merged = [descriptor_points_merged,descriptor_points];
+    end
+end
+save('siftPoints.mat','scatter_points_merged', 'descriptor_points_merged'); % save descriptors for task 2
+figure;
+scatter3(scatter_points_merged(:,1),scatter_points_merged(:,2),scatter_points_merged(:,3));
+clear all;
+%%
+loc1 = loc_matrix(2,1:3);
+ori1 = orient_matrix(4:6,1:3);
+[scatter_points, descriptor_points] = projectPoints('DSC_9743.JPG',ori1,loc1,intrinsicsMat',ply_vertex_coord,ply_faces,[5,6,11,12,4,3]);
+scatter_points_merged = [scatter_points_merged;scatter_points];
+descriptor_points_merged = [descriptor_points_merged,descriptor_points];
 1
 
 loc2 = loc_matrix(2,1:3);
@@ -134,3 +180,6 @@ descriptor_points_merged = [descriptor_points_merged,descriptor_points];
 save('siftPoints.mat','scatter_points_merged', 'descriptor_points_merged');
 figure;
 scatter3(scatter_points_merged(:,1),scatter_points_merged(:,2),scatter_points_merged(:,3));
+
+
+   

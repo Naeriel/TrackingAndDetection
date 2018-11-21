@@ -35,7 +35,7 @@ num_images = length(dir_images);                    % Number of images in folder
 %pcshow(ply_vertex_coord,'VerticalAxis','Y','VerticalAxisDir','down','MarkerSize',200);
 % %hold on
 
-for i = 1:num_images
+for i = 1
     currentImage = imread(fullfile(path_images,dir_images(i).name));
     curImage = currentImage;
     currentImage = single(rgb2gray(currentImage));
@@ -52,8 +52,7 @@ for i = 1:num_images
     
     imgCoord = [];
     worldCoord = [];
-    
-    
+     
     bestInlierNumber = 0;
     for j = 1:N
         %Randomly select a sample of 4 data points from S and estimate the pose using PnP.]

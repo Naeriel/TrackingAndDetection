@@ -1,8 +1,4 @@
-function [scatter_points,descriptor_points] = projectPoints(filename, R_t, C_t, K, vertex,face, faces_pick)
-    I = imread(filename);
-    I = single(rgb2gray(I));
-    [f,d] = vl_sift(I);
-    
+function [scatter_points,descriptor_points] = projectPoints(f, d, R_t, C_t, K, vertex,face, faces_pick)
     % Transform to homogeneous coordinates
     m_nonhomo = f(1:2,1:size(f,2));
     homogenize_ones = ones(1,size(f,2));
@@ -15,14 +11,14 @@ function [scatter_points,descriptor_points] = projectPoints(filename, R_t, C_t, 
     C = (-Q^(-1) * q);
     dir = Q^(-1) * m_homo;
     
-    face_m = face + 1;
+   % face_m = face + 1;
     scatter_points = [];
     descriptor_points = [];
     
     % Iterate through points. If point intersects the triangle, store
     % coordinates
     for i = 1:size(f,2)
-        [INTERSECT, T,U,V, XCOOR] = TriangleRayIntersection(C,dir(1:3,i),vertex(face_m(faces_pick,1),[1:3]),vertex(face_m(faces_pick,2),[1:3]),vertex(face_m(faces_pick,3),[1:3]));
+        [INTERSECT, T,U,V, XCOOR] = TriangleRayIntersection(C,dir(1:3,i),vertex(faces_pick(1),:),vertex(faces_pick(2),:),vertex(faces_pick(3),:));
         if sum(INTERSECT) > 0
             for j = 1:size(INTERSECT,1)
                 if INTERSECT(j)

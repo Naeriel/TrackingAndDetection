@@ -74,19 +74,31 @@ end
 hold off
 clear i;
 %% SIFT Keypoints
-% Iterate over images
+scatter_points_merged = [];
+descriptor_points_merged = [];
 centroid = [0.165 0.063 0.093]./2;
 ply_faces(9:10,:) = []; % triangles 9 and 10 are never visible
+
+% Iterate over images
 for i = 1:num_images
     I = imread(dir_images(i).name);
     I = single(rgb2gray(I));
     [f,d] = vl_sift(I);
     descriptor_points = [];
-    cameraVector = centroid - loc_matrix(i,1:3);
     
-    [select_faces] = selectFaces(ply_vertex_coord,ply_faces, cameraVector);
-    [scatter_points_merged,descriptor_points_merged] = SIFT(I,i,f,d,select_faces, ply_faces, ply_vertex_coord, orient_matrix, loc_matrix, intrinsicsMat);
- end
+    cameraVector = centroid - loc_matrix(i,1:3);
+    [select_faces] = selectFaces(ply_vertex_coord,ply_faces, cameraVector)
+    
+    % Collect scattering points and descriptor points
+    current_location = loc_matrix(i,:);
+    current_orientation = orient_matrix((i-1)*3+1:i*3,1:3);
+    for j = (1:size(facestemp,1))
+        [scatter_points, descriptor_points] = projectPoints(f,d,current_orientation,current_location,intrinsicsMat',ply_vertex_coord,ply_faces,select_faces(j,:) + 1);
+        size(scatter_points,1);
+        scatter_points_merged = [scatter_points_merged; scatter_points];
+        descriptor_points_merged = [descriptor_points_merged,descriptor_points];
+    end
+end
 save('siftPoints.mat','scatter_points_merged', 'descriptor_points_merged'); % save descriptors for task 2
 figure;
 scatter3(scatter_points_merged(:,1),scatter_points_merged(:,2),scatter_points_merged(:,3));

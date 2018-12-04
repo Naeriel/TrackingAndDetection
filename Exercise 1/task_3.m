@@ -9,8 +9,13 @@ path_images = 'data/data/images/tracking'; % Path to the images folder
 dir_images = dir(fullfile(path_images,'*.jpg')); % Select .JPG files
 num_images = length(dir_images);
 
-%% Read first image
-currentImage = imread(fullfile(path_images,dir_images(1).name));
-currentImage = single(rgb2gray(currentImage)); % To grayscale to do SIFT
-[f,d] = vl_sift(currentImage);
-save('firstImgFeatures','f','d');
+%% 
+for i = 2:num_images
+    % Read current image and previous image and load SIFT points
+    currentImage = imread(fullfile(path_images,dir_images(i).name));
+    currentImage = single(rgb2gray(currentImage)); % To grayscale to do SIFT
+    previousImage = imread(fullfile(path_images,dir_images(i - 1).name));
+    previousImage = single(rgb2gray(previousImage)); 
+    [f,d] = vl_sift(currentImage);
+    [fp,dp] = vl_sift(previousImage);
+end

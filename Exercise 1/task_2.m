@@ -43,43 +43,9 @@ for i = 1
     
     %Determine the set of data points Si from all 2D-3D correspondences where reprojection error (Euclidean distance) is below the threshold t. 
     %The set Si is the consensus set of the sample and defines the inliers of S.
-    [matches, scores] = vl_ubcmatch(SIFT.descriptor_points_merged, d);
     
-    numMatches = size(matches, 2)
-    X1 = SIFT.scatter_points_merged(matches(1,:), 1:3);
-    X2 = f(1:2, matches(2,:));
-    X2 = X2.';
-    
-    imgCoord = [];
-    worldCoord = [];
-     
-    bestInlierNumber = 0;
-    for j = 1:N
-        %Randomly select a sample of 4 data points from S and estimate the pose using PnP.]
-        idx = randperm(numMatches,4);
-        
-        imgCoord = [imgCoord ; X2([idx],:)];
-        worldCoord = [worldCoord ; X1([idx],:)];
-        
-        [dummy,dummy_,dummy__,status] = estimateWorldCameraPose(imgCoord,worldCoord,cameraParams,'MaxReprojectionError',t);
-        if status == 0
-            [worldOrientation, worldLocation, inlierIdx] = estimateWorldCameraPose(imgCoord, worldCoord, cameraParams,'MaxReprojectionError', t);
-            inlierNumber = length(inlierIdx);
+    [worldOrientation, worldLocation, inlierIdx] = RANSAC(f, d, cameraParams, SIFT, N, t);
 
-            %If the number of inliers is greater than we have seen so far, re-estimate the pose using Si and store it with the corresponding number of inliers.
-            if inlierNumber < bestInlierNumber
-                imgCoord(end-3:end,:) = [];
-                worldCoord(end-3:end,:) = [];
-            else
-                bestInlierNumber = inlierNumber;                      
-            end
-        else
-            imgCoord(end-3:end,:) = [];
-            worldCoord(end-3:end,:) = [];
-        end
-       
-    end
-    [worldOrientation, worldLocation, inlierIdx] = estimateWorldCameraPose(imgCoord, worldCoord, cameraParams,'MaxReprojectionError', t);
     %For each image from the test sequence you are required to provide visualization of 3D bounding boxes for the detected object as shown in Figure 1.
 %    plotCamera('Size', 0.05, 'Orientation', worldOrientation, 'Location', worldLocation);
     

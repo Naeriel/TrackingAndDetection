@@ -16,7 +16,7 @@ cameraParams = cameraParameters('IntrinsicMat',intrinsicsMat); % Store intrinsic
 
 path_images = 'data/data/images/init_texture'; % Path to the images folder
 dir_images = dir(fullfile(path_images,'*.jpg')); % Select .JPG files
-num_images = 8; % Number of images in folder
+num_images = length(dir_images); % Number of images in folder
 orient_matrix = [];
 loc_matrix = [];
 image_coord_pts = NaN(num_vertex, 2);

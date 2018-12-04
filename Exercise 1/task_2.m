@@ -35,7 +35,7 @@ num_images = length(dir_images);                    % Number of images in folder
 %pcshow(ply_vertex_coord,'VerticalAxis','Y','VerticalAxisDir','down','MarkerSize',200);
 % %hold on
 
-for i = 1
+for i = 1:num_images
     currentImage = imread(fullfile(path_images,dir_images(i).name));
     curImage = currentImage;
     currentImage = single(rgb2gray(currentImage));
@@ -51,10 +51,7 @@ for i = 1
     
     [rotationMatrix,translationVector] = cameraPoseToExtrinsics(worldOrientation,worldLocation);
     projectedPoints = worldToImage(cameraParams, rotationMatrix, translationVector, ply_vertex_coord);
-    %figure
-    %imshow(curImage);
-    %hold on
-    %plot(projectedPoints(:,1),projectedPoints(:,2),'g*-');
+
     plotBounding3D(projectedPoints', curImage);
     
 end

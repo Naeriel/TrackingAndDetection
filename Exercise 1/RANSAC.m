@@ -7,33 +7,31 @@ function [worldOrientation, worldLocation, inlierIdx] = RANSAC(f, d, cameraParam
   X2 = X2.';
   imgCoord = [];
   worldCoord = [];
-  
+
+  bestImgCoord = [];
+  bestWorldCoord = [];
   bestInlierNumber = 0;
+
   for j = 1:N
       %Randomly select a sample of 4 data points from S and estimate the pose using PnP.]
       idx = randperm(numMatches,4);
-      
-      imgCoord = [imgCoord ; X2([idx],:)];
-      worldCoord = [worldCoord ; X1([idx],:)];
-      
+
+      %concatanate the random points.
+      imgCoord = [X2([idx],:)];
+      worldCoord = [X1([idx],:)];
+
       [dummy,dummy_,dummy__,status] = estimateWorldCameraPose(imgCoord,worldCoord,cameraParams,'MaxReprojectionError',t);
-      
       if status == 0
           [worldOrientation, worldLocation, inlierIdx] = estimateWorldCameraPose(imgCoord, worldCoord, cameraParams,'MaxReprojectionError', t);
           inlierNumber = length(inlierIdx);
-          
+
           %If the number of inliers is greater than we have seen so far, re-estimate the pose using Si and store it with the corresponding number of inliers.
-          if inlierNumber < bestInlierNumber
-              imgCoord(end-3:end,:) = [];
-              worldCoord(end-3:end,:) = [];
-          else
-              bestInlierNumber = inlierNumber;
+          if inlierNumber > bestInlierNumber
+              bestInlierNumber = inlierNumber;    
+              bestImgCoord = imgCoord;
+              bestWorldCoord = worldCoord;
           end
-      else
-          imgCoord(end-3:end,:) = [];
-          worldCoord(end-3:end,:) = [];
       end
   end
-  [worldOrientation, worldLocation, inlierIdx] = estimateWorldCameraPose(imgCoord, worldCoord, cameraParams,'MaxReprojectionError', t);
+[worldOrientation, worldLocation, inlierIdx] = estimateWorldCameraPose(bestImgCoord, bestWorldCoord, cameraParams,'MaxReprojectionError', t);
 end
-

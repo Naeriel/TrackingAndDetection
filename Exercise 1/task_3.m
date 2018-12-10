@@ -41,4 +41,6 @@ for i = 2
     [rotationMatrix,translationVector] = cameraPoseToExtrinsics(worldOrientation,worldLocation);
     projectedPoints = worldToImage(cameraParams, rotationMatrix, translationVector, ply_vertex_coord);
     plotBounding3D(projectedPoints', curImage);
+    rotationVector = rotationMatrixToVector(rotationMatrix);
+    p = [rotationVector,translationVector]'; %vector of parameters (trans + rot)
 end

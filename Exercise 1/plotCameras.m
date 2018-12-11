@@ -3,6 +3,5 @@ function plotCameras(orient_matrix,loc_matrix)
          loc_matrix);
      xlim([-1,1])
      ylim([-1, 1])
-     hold on 
 end
 

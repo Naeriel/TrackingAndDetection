@@ -27,7 +27,7 @@ function [Rt, Tt] = LevenbergMarquadt(R0, T0, A, M, m,  N, thresh)
         
         J = [];
         for j=1:size(M)
-            dM_dp = [dR_dv1.*M(j,:)', dR_dv2.*M(j,:)', dR_dv3.*M(j,:)',eye(3)];
+            dM_dp = [dR_dv1*M(j,:)', dR_dv2*M(j,:)', dR_dv3*M(j,:)',eye(3)];
             dmt_dM = A;
             mt = A*(R*M(j,:)'+T'); %feature point backprojected on image
             U = mt(1);
@@ -42,14 +42,14 @@ function [Rt, Tt] = LevenbergMarquadt(R0, T0, A, M, m,  N, thresh)
 
         
         e = energyFunction(R, T, A, M, m);
-        
-        delta = -(J'*J + lambda*J)^(-1)*(J'*e);
+
+        delta = -(J'*J + lambda*eye(6))^(-1)*(J'*e);
         
         theta_new = theta + delta;
         v_new = theta_new (1:3);
         R_new = rotationVectorToMatrix (v_new);
         T_new = theta_new (4:6);
-        e_new = energy(R_new, T_new, A, M, m);
+        e_new = energyFunction(R_new, T_new, A, M, m);
         
         if e_new > e
             lambda = 10 * lambda;

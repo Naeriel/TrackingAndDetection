@@ -14,14 +14,16 @@ t = input(prompt);
 prompt = 'Enter the iteration? ';
 N = input(prompt);
 
-path_images = 'data/data/images/tracking'; % Path to the images folder
+%path_images = 'data/data/images/tracking'; % Path to the images folder
+path_images = 'data\data\images\tracking'; % Path to the images folder
 dir_images = dir(fullfile(path_images,'*.jpg')); % Select .JPG files
 num_images = length(dir_images);
 camera_locations = zeros(num_images,3);
 [ply_vertex_coord, ply_faces] = read_ply('data/data/model/teabox.ply');
 
+
 %SIFT keypoints corresponding to the tea box and their 3D locations on the model.
-SIFT = load('siftPoints.mat'); % Mi points
+SIFT = load('data.mat'); % Mi points
 %%
 for i = 2
     % Read current image and previous image and load SIFT points
@@ -35,13 +37,18 @@ for i = 2
     
     [matches, scores] = vl_ubcmatch(d,SIFT.descriptor_points_merged);
     m_image = f(1:2,matches(1,:));
-    m_world = SIFT.scatter_points_merged(matches(1,:),:);
+    m_world = SIFT.scatter_points_merged(matches(2,:),:);
     % Match SIFT points from training images (ex02) with previousImage SIFT
     % and use RANSAC to compute camera location
     [worldOrientation, worldLocation, inlierIdx] = RANSAC(fp, dp, cameraParams, SIFT, N, t);
-    %plotCameras(worldOrientation,worldLocation);
-
+    
     [rotationMatrix,translationVector] = cameraPoseToExtrinsics(worldOrientation,worldLocation);
+    
+    [Rt, Tt] = LevenbergMarquadt(rotationMatrix, translationVector, A, m_world, m_image, N, t);
+    plotCameras(worldOrientation,worldLocation);
+    [orientation,location] = extrinsicsToCameraPose(Rt,Tt);
+    plotCameras(orientation,location);
+    
     projectedPoints = worldToImage(cameraParams, rotationMatrix, translationVector, ply_vertex_coord);
     plotBounding3D(projectedPoints', curImage);
     rotationVector = rotationMatrixToVector(rotationMatrix);

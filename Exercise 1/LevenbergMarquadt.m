@@ -17,13 +17,17 @@ function [Rt, Tt] = LevenbergMarquadt(R0, T0, A, M, m,  N, thresh)
         
         vx = skewSymmetric (v);
 
-     %   tmp = cross(v, eye(3)-R);
+       tmp = v .* (eye(3)-R);
         
-   %     dR_dv1 = (v(1)*vx+m(1))*R/sum(v.^2);
-        dR_dv = (cross(v,vx)+cross(v, eye(3)-R))*R/sum(v.^2);
+        dR_dv1 = (v(1)*vx+tmp(1))*R/sum(v.^2);
+        dR_dv2 = (v(2)*vx+tmp(2))*R/sum(v.^2);
+        dR_dv3 = (v(3)*vx+tmp(3))*R/sum(v.^2);
+   %     dR_dv = (cross(v,vx)+cross(v, eye(3)-R))*R/sum(v.^2);
+        dR_dv = [dR_dv1, dR_dv2, dR_dv3];
+        
         J = [];
         for j=1:size(M)
-            dM_dp = [dR_dv*M(j,:), eye(3)];
+            dM_dp = [dR_dv1.*M(j,:)', dR_dv2.*M(j,:)', dR_dv3.*M(j,:)',eye(3)];
             dmt_dM = A;
             mt = A*(R*M(j,:)'+T'); %feature point backprojected on image
             U = mt(1);
@@ -37,7 +41,7 @@ function [Rt, Tt] = LevenbergMarquadt(R0, T0, A, M, m,  N, thresh)
         end
 
         
-        e = energy(R, T, A, M, m);
+        e = energyFunction(R, T, A, M, m);
         
         delta = -(J'*J + lambda*J)^(-1)*(J'*e);
         

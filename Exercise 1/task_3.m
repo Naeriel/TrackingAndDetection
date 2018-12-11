@@ -25,7 +25,7 @@ camera_locations = zeros(num_images,3);
 %SIFT keypoints corresponding to the tea box and their 3D locations on the model.
 SIFT = load('data.mat'); % Mi points
 %%
-for i = 2:num_images
+for i = 2:7
     % Read current image and previous image and load SIFT points
     currentImage = imread(fullfile(path_images,dir_images(i).name));
     curImage = currentImage;
@@ -45,10 +45,10 @@ for i = 2:num_images
     [rotationMatrix,translationVector] = cameraPoseToExtrinsics(worldOrientation,worldLocation);
     
     [Rt, Tt] = LevenbergMarquadt(rotationMatrix, translationVector, A, m_world, m_image, N, t);
-    plotCameras(worldOrientation,worldLocation);
+    plotCameras(worldOrientation,worldLocation, 'red');
     hold on
     [orientation,location] = extrinsicsToCameraPose(Rt,Tt);
-    plotCameras(orientation,location);
+    plotCameras(orientation,location, 'blue');
     hold on
     
     projectedPoints = worldToImage(cameraParams, Rt, Tt, ply_vertex_coord);

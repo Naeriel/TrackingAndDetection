@@ -3,7 +3,7 @@ function [Rt, Tt] = LevenbergMarquadt(R0, T0, A, M, m,  N, thresh)
     R = R0;
     T = T0;
     
-    
+    N = 1000; %TODO remove later
     lambda = 0.001;
     u = thresh + 1;
     

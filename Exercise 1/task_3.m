@@ -6,7 +6,6 @@ cx = 1841.68855;
 cy = 1235.23369;
 A = [fx 0 cx; 0 fy cy; 0 0 1];
 cameraParams = cameraParameters('IntrinsicMat',A'); % Store intrinsics matrix 
-c = 4.685; % weight
 
 %Implement this algorithm such that threshold t and number of iterations N can be selected by the user.
 prompt = 'What is the threshold? ';
@@ -22,10 +21,15 @@ camera_locations = zeros(num_images,3);
 [ply_vertex_coord, ply_faces] = read_ply('data/data/model/teabox.ply');
 
 
+prevCamWorldOrientation = [];
+prevWorldLocation = [];
+currentCamWorldOrientation = [];
+currentCamWorldLocation = [];
+
 %SIFT keypoints corresponding to the tea box and their 3D locations on the model.
 SIFT = load('data.mat'); % Mi points
 %%
-for i = 2:7
+for i = 2:4
     % Read current image and previous image and load SIFT points
     currentImage = imread(fullfile(path_images,dir_images(i).name));
     curImage = currentImage;
@@ -45,15 +49,30 @@ for i = 2:7
     [rotationMatrix,translationVector] = cameraPoseToExtrinsics(worldOrientation,worldLocation);
     
     [Rt, Tt] = LevenbergMarquadt(rotationMatrix, translationVector, A, m_world, m_image, N, t);
-    plotCameras(worldOrientation,worldLocation, 'red');
-    hold on
+    prevCamWorldOrientation = [prevCamWorldOrientation; worldOrientation];
+    prevWorldLocation = [prevWorldLocation; worldLocation];
+    %plotCameras(worldOrientation,worldLocation, 'red');
+    %hold on
     [orientation,location] = extrinsicsToCameraPose(Rt,Tt);
-    plotCameras(orientation,location, 'blue');
-    hold on
+    currentCamWorldOrientation = [currentCamWorldOrientation; orientation];
+    currentCamWorldLocation = [currentCamWorldLocation; location];
+    %plotCameras(orientation,location, 'blue');
+    %hold on
     
     projectedPoints = worldToImage(cameraParams, Rt, Tt, ply_vertex_coord);
-%    plotBounding3D(projectedPoints', curImage);
+    plotBounding3D(projectedPoints', curImage);
     rotationVector = rotationMatrixToVector(rotationMatrix);
     p = [rotationVector,translationVector]'; %vector of parameters (trans + rot)
+end
+%% Plot box and camera locations
+%pcshow(ply_vertex_coord,'VerticalAxis','Y', 'VerticalAxisDir','down','MarkerSize',200);
+
+figure   
+for i=1:3 %MAKE IT BACK num_images-1
+   plotCameras(prevCamWorldOrientation((i-1)*3+1:i*3,1:3),prevWorldLocation(i,1:3), 'red');
+   hold on
+   
+   plotCameras(currentCamWorldOrientation((i-1)*3+1:i*3,1:3),currentCamWorldLocation(i,1:3), 'blue');
+   hold on
 end
 hold off

@@ -16,7 +16,7 @@ int main( int argc, char** argv ){
     image = imread("/Users/zojja/TUM/Exercise2/Exercise2/data/task1/obj1000.jpg",IMREAD_COLOR); // change image path
     cvtColor(image, imagegray, COLOR_BGR2GRAY );
     imshow( "Display window", imagegray);                   // Show grayscale iamge
-    resize(image, resImg, Size(128,64),0,0, INTER_NEAREST);
+    resize(image, resImg, Size(256,256),0,0, INTER_NEAREST);
     HOGDescriptor hog;
     hog.winSize = resImg.size();
     // set the descriptor position to the middle of the image

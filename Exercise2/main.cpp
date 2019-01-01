@@ -12,19 +12,19 @@ using namespace std;
 
 
 int main( int argc, char** argv ){
-    Mat image, imagegray;
+    Mat image, imagegray, resImg;
     image = imread("/Users/zojja/TUM/Exercise2/Exercise2/data/task1/obj1000.jpg",IMREAD_COLOR); // change image path
     cvtColor(image, imagegray, COLOR_BGR2GRAY );
     imshow( "Display window", imagegray);                   // Show grayscale iamge
-    
+    resize(image, resImg, Size(128,64),0,0, INTER_NEAREST);
     HOGDescriptor hog;
-    hog.winSize = imagegray.size();
+    hog.winSize = resImg.size();
     // set the descriptor position to the middle of the image
     std::vector<cv::Point> positions;
-    positions.push_back(cv::Point(imagegray.cols / 2, imagegray.rows / 2));
+    positions.push_back(cv::Point(resImg.cols / 2, resImg.rows / 2));
     std::vector<float> descriptor;
-    hog.compute(imagegray, descriptor,cv::Size(),cv::Size(),positions);
-    visualizeHOG(image, descriptor, hog, 1);
+    hog.compute(resImg, descriptor,cv::Size(0,0),cv::Size(0,0),positions);
+    visualizeHOG(resImg, descriptor, hog, 1);
     waitKey(0);                                          // Wait for a keystroke in the window
     return 0;
 }
@@ -149,7 +149,6 @@ void visualizeHOG(cv::Mat img, std::vector<float> &feats, cv::HOGDescriptor hog_
             
         }
     }
-    
     
     for (int y = 0; y < cells_in_y_dir; y++) {
         for (int x = 0; x < cells_in_x_dir; x++) {

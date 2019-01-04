@@ -7,8 +7,30 @@
 
 #include "main.hpp"
 
-int main( int argc, char** argv ){
+#define    HOGwinSize      Size(640,640)
+#define    HOGblockSize    Size(80, 80)
+#define    HOGblockStride  Size(80, 80)
+#define    HOGcellSize     Size(80, 80)
+#define    HOGnbins        9
+#define    num_of_trees    100
+#define    num_of_folders  6
+
+// Compute HOG descriptor
+vector<float> compute_descriptors(Mat image, HOGDescriptor hog){
+    Mat hogImg;
+    vector<float> descriptor;
+    // resize original imageto 640x640
+    resize(image, hogImg, Size(640,640),0,0, INTER_NEAREST);
     
+    // Compute HOG descriptors
+    hog.compute(hogImg, descriptor);
+    
+    return descriptor;
+}
+
+
+int main( int argc, char** argv ){
+    // TASK 1: OPEN CV AND HOG DESCRIPTORS
     // Load image
     Mat image;
     image = imread("/Users/zojja/TUM/Exercise2/Exercise2/data/task1/obj1000.jpg",IMREAD_COLOR); // change image path
@@ -44,21 +66,52 @@ int main( int argc, char** argv ){
     imshow("Paddded image", paddImg);
     imwrite("/Users/zojja/TUM/Exercise2/Exercise2/padding.jpg", paddImg);
     
-    // Create HOG and modify paramenters
+   // Create HOG and modify paramenters
     Mat hogImg;
     resize(image, hogImg, Size(640,640),0,0, INTER_NEAREST);
     HOGDescriptor hog;
-    hog.winSize = hogImg.size();
-    hog.blockSize = Size(80, 80);
-    hog.blockStride = Size(80, 80);
-    hog.cellSize = Size(80, 80);
-    hog.nbins = 9;
+    hog.winSize = HOGwinSize;
+    hog.blockSize = HOGblockSize;
+    hog.blockStride = HOGblockStride;
+    hog.cellSize = HOGcellSize;
+    hog.nbins = HOGnbins;
     
     // Compute HOG descriptors
-    vector<Point> positions;
-    vector<float> descriptor;
-    hog.compute(hogImg, descriptor);
-    visualizeHOG(hogImg, descriptor, hog, 1);
-    waitKey(0);                                         
+    vector<float> descriptors;
+    
+    descriptors = compute_descriptors(image,hog);
+    visualizeHOG(hogImg, descriptors, hog, 1);
+    
+    //TASK 2: DECISION TREES
+    
+    HOGDescriptor hogTrain;
+    hogTrain.winSize = HOGwinSize;
+    hogTrain.blockSize = HOGblockSize;
+    hogTrain.blockStride = HOGblockStride;
+    hogTrain.cellSize = HOGcellSize;
+    hogTrain.nbins = HOGnbins;
+    
+    vector<float> train_descriptor;
+    Mat train_descriptors;
+    
+    // Iterate over folder
+    for(int i = 0; i < num_of_folders; i++){
+        String train_path = "/Users/zojja/TUM/Exercise2/Exercise2/data/task2/train/0" + to_string(i) + "/";
+        vector<String> fn;
+        glob(train_path, fn, false);
+        
+        size_t count = fn.size(); // number of jpg files in images folder
+        
+        // Iterate over images
+        for (int j = 0; j < count; j++){
+            Mat imageTrain = imread(fn[i]); //read image
+            train_descriptor = compute_descriptors(imageTrain, hogTrain);
+            Mat descriptor_mat = Mat(train_descriptor).t();
+            train_descriptors.push_back(descriptor_mat);
+        }
+    }
+    cout<<train_descriptors.size()<<endl;
+    
+    waitKey(0);
     return 0;
 }

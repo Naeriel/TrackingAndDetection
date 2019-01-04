@@ -139,7 +139,7 @@ void visualizeHOG(cv::Mat img, std::vector<float> &feats, cv::HOGDescriptor hog_
     delete[] gradientStrengths;
     delete[] cellUpdateCounter;
     cv::imshow("HOG vis", visual_image);
-    cv::waitKey(-1);
+  //  cv::waitKey(-1);
     cv::imwrite("hog_vis.jpg", visual_image);
 
 }

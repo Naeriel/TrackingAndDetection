@@ -20,9 +20,8 @@
 vector<float> compute_descriptors(Mat image, HOGDescriptor hog){
     Mat hogImg;
     static vector<float> descriptor;
-    // resize original imageto 640x640
+    // resize original image to 640x640
     resize(image, hogImg, HOGwinSize,0,0,CV_INTER_LINEAR);
-    
     // Compute HOG descriptors
     hog.compute(hogImg, descriptor);
     
@@ -84,29 +83,23 @@ int main( int argc, char** argv ){
     visualizeHOG(hogImg, descriptors, hog, 1);*/
     
     //TASK 2: DECISION TREES
-    
-    HOGDescriptor hogTrain(HOGwinSize, HOGblockSize, HOGblockStride, HOGcellSize, HOGnbins);
-    
-    // Prepare the labels for training (matrix of ones)
-    int  train_samples_number[6] = {49,67,42,53,67,110} ; //图片个数
-    Mat train_labels;
-    
-    for(int i = 0; i < 6; i++){
-        train_labels.push_back(Mat::ones(train_samples_number[i],1,CV_32S) * i);
-    }
-    
-    // Prepare the data for training with HOG Descriptors
+
+    // Prepare the labels and data for training with HOG Descriptors
     vector<float> train_descriptor;
     Mat train_descriptors;
- 
+    Mat train_labels;
+    HOGDescriptor hogTrain(HOGwinSize, HOGblockSize, HOGblockStride, HOGcellSize, HOGnbins);
+    
     // Iterate over folders
     for(int i = 0; i < num_of_folders; i++){
         String train_path = "//Users/zojja/TUM/Exercise2/Exercise2/data/task2/train/0"+std::to_string(i)+"/";
         vector<String> fn;
         glob(train_path, fn, false);
+        size_t count = fn.size(); //number of files per folder
         
+        train_labels.push_back(Mat::ones((int)count, 1, CV_32S) * i);
         // Iterate over images (with random filenames)
-        for(int j=0;j<train_samples_number[i];j++){
+        for(int j = 0; j < count;j++){
             Mat image = imread(fn[j]);
             train_descriptor = compute_descriptors(image, hogTrain); // Compute descriptors for Training images
             Mat descriptor_mat = Mat(train_descriptor).t(); // Add to descriptor Mat
@@ -344,7 +337,6 @@ int vote_for_result(const float a[]){
         }
     }
     
-    //两两比较后输出最大的那个
     float vote_max = 0;
     int vote_max_index=0;
     for(int i=0;i<num_of_trees;i++){

@@ -83,4 +83,6 @@ int* randperm(int Num, int low, int up) {
     }
     return temp;
 }
+
+
 #endif /* main_hpp */

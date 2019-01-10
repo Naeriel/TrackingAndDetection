@@ -16,22 +16,10 @@
 #define    num_of_folders  6
 #define    test_samples    10
 
-// Compute HOG descriptor
-vector<float> compute_descriptors(Mat image, HOGDescriptor hog){
-    Mat hogImg;
-    static vector<float> descriptor;
-    // resize original image to 640x640
-    resize(image, hogImg, HOGwinSize,0,0,CV_INTER_LINEAR);
-    // Compute HOG descriptors
-    hog.compute(hogImg, descriptor);
-    
-    return descriptor;
-}
-
 
 int main( int argc, char** argv ){
-  /*  // TASK 1: OPEN CV AND HOG DESCRIPTORS
-    // Load image
+    // TASK 1: OPEN CV AND HOG DESCRIPTORS
+  /*  // Load image
     Mat image;
     image = imread("/Users/zojja/TUM/Exercise2/Exercise2/data/task1/obj1000.jpg",IMREAD_COLOR); // change image path
     
@@ -84,48 +72,19 @@ int main( int argc, char** argv ){
     
     //TASK 2: DECISION TREES
 
-    // Prepare the labels and data for training with HOG Descriptors
+   // Prepare the labels and data for training with HOG Descriptors
     vector<float> train_descriptor;
     Mat train_descriptors;
     Mat train_labels;
     HOGDescriptor hogTrain(HOGwinSize, HOGblockSize, HOGblockStride, HOGcellSize, HOGnbins);
     
-    // Iterate over folders
-    for(int i = 0; i < num_of_folders; i++){
-        String train_path = "//Users/zojja/TUM/Exercise2/Exercise2/data/task2/train/0"+std::to_string(i)+"/";
-        vector<String> fn;
-        glob(train_path, fn, false);
-        size_t count = fn.size(); //number of files per folder
-        
-        train_labels.push_back(Mat::ones((int)count, 1, CV_32S) * i);
-        // Iterate over images (with random filenames)
-        for(int j = 0; j < count;j++){
-            Mat image = imread(fn[j]);
-            train_descriptor = compute_descriptors(image, hogTrain); // Compute descriptors for Training images
-            Mat descriptor_mat = Mat(train_descriptor).t(); // Add to descriptor Mat
-            train_descriptors.push_back(descriptor_mat);
-        }
-    }
-    
-    // Training of Decision Tree
-    Ptr<TrainData> tData = TrainData::create(train_descriptors, ROW_SAMPLE, train_labels);
-    
-    // Create and set parameters Decision Tree
-    Ptr<DTrees> dtree = DTrees::create();
-    
-    dtree->setMaxDepth(10);
-    dtree->setMinSampleCount(10);
-    dtree->setMaxCategories(6);
-    dtree->setCVFolds(0);
-    dtree->train(tData);
-    cout<<"decision tree training done."<<endl<<endl;
-    dtree->save("/Users/zojja/TUM/Exercise2/Exercise2/data/task2/train/trained_dtree.xml");
+    train_tree("/Users/zojja/TUM/Exercise2/Exercise2/data/task2/train/", num_of_folders, hogTrain, HOGwinSize);
 
     // Predict labels
     cout<<"predict decision tree starts."<<endl;
     cout<<endl;
     int counter = 0;
-    for(int i=0;i<6;i++){
+    for(int i = 0; i < num_of_folders; i++){
         String test_path = "/Users/zojja/TUM/Exercise2/Exercise2/data/task2/test/0"+std::to_string(i)+"/";
         
         //prepare the data for testing
@@ -138,7 +97,7 @@ int main( int argc, char** argv ){
         // Compute descriptors of test images
         for(int j = 0; j < test_samples; j++){
             Mat image = imread(fn[j]);
-            test_descriptor = compute_descriptors(image, hogTrain);
+            test_descriptor = compute_descriptors(image, hogTrain, HOGwinSize);
             Mat descriptor_mat = cv::Mat(test_descriptor).t();
             test_descriptors.push_back(descriptor_mat);
         }
@@ -165,99 +124,87 @@ int main( int argc, char** argv ){
     fprintf(stdout, "total classification accuracy using decision tree: %f\n", counter * 1.f/60);
     cout<<endl;
 
-  /*  // task 2 ///////////////random forest classifier///////////////
+    // task 2 ///////////////random forest classifier///////////////
     
     cout << endl;
-    cout << "random forest starts." << endl;
+    cout << "Random Forest Classifier." << endl;
     cout << endl;
 
     randomForest Forest[num_of_trees];
     int correct_class = 15;
     
+    // Random forest with 100 trees
     for (int t = 0; t < num_of_trees; t++) {
-        srand((unsigned) time(nullptr));
-        // size of subset of training data. each class use 1/3 data to train
-        int subset_train[6] = {17, 22, 14, 17, 22, 36};
-        int range_train[6] = {49, 67, 42, 53, 67, 110};
+        //srand((unsigned) time(nullptr));
+        
+        // Train data
+        vector<float> train_descriptor;
+        Mat train_descriptors;
+        Mat train_labels;
         int *rand_index;
         
-        std::vector<float> train_descriptor;
-        cv::Mat train_descriptors;
-        cv::Mat train_resize_image;
-        
-        //prepare labels
-        cv::Mat train_labels;
-        
-        for (int i = 0; i < 6; i++) {
-            rand_index = randperm(subset_train[i], 0, range_train[i] - 1);
-            
-            train_labels.push_back(cv::Mat::ones(subset_train[i], 1, CV_32S) * i);
-            
-            cv::String train_path = "/Users/zojja/TUM/Exercise2/Exercise2/data/task2/train/0" + std::to_string(i) + "/";
+        for (int i = 0; i < num_of_folders; i++) {
+            String train_path = "/Users/zojja/TUM/Exercise2/Exercise2/data/task2/train/0" + std::to_string(i) + "/";
             vector<String> fn;
             glob(train_path, fn, false);
-            for (int j = 0; j < subset_train[i]; j++) {
-                cv::Mat sub_train;
-                sub_train = imread(fn[i]);
-                
-                cv::Mat resize_image;
-                cv::resize(sub_train, resize_image, cv::Size(640, 640), 0, 0, CV_INTER_LINEAR);
-                // 计算HOG descriptor
-                cv::HOGDescriptor hog(cv::Size(640, 640), cv::Size(80, 80), cv::Size(80, 80), cv::Size(80, 80), 9);
-                hog.compute(resize_image, train_descriptor);
-                cv::Mat descriptor_mat = cv::Mat(train_descriptor).t();
+            size_t count = fn.size(); //number of files per folder
+            
+            rand_index = randperm((int)count / 3, 0, (int)count- 1);
+            train_labels.push_back(cv::Mat::ones((int)count / 3, 1, CV_32S) * i);
+            
+            // Each tree has 1/3 of all training data in folder distributed randomly
+            for (int j = 0; j < (int)count / 3; j++) {
+                int k = rand_index[j];
+                Mat image = imread(fn[k]);
+                train_descriptor = compute_descriptors(image, hogTrain, HOGwinSize);
+                Mat descriptor_mat = cv::Mat(train_descriptor).t();
                 train_descriptors.push_back(descriptor_mat);
             }
             delete[] rand_index;
         }
         
-        cv::Ptr<cv::ml::TrainData> tData = cv::ml::TrainData::create(train_descriptors, cv::ml::ROW_SAMPLE,
-                                                                     train_labels);
-        cv::Ptr<cv::ml::DTrees> random_forest = Forest[t].creatRF();
+        // Create and train decision tree for RF
+        Ptr<TrainData> tData = TrainData::create(train_descriptors, ROW_SAMPLE, train_labels);
+        Ptr<DTrees> random_forest = Forest[t].creatRF();
         Forest[t].trainRF(random_forest, tData);
-        cout << "training for " + std::to_string(t) + ".th tree is done." << endl;
         
-        //prepare the data for testing
-        std::vector<float> test_descriptor;
-        cv::Mat test_descriptors;
-        cv::Mat test_resize_image;
-        int test_samples_number = 10;
-        cv::Mat test_labels;
+        // Test data
+        vector<float> test_descriptor;
+        Mat test_descriptors;
+        Mat test_labels;
         
         for (int i = 0; i < 6; i++) {
-            test_labels.push_back(cv::Mat::ones(test_samples_number, 1, CV_32FC1) * i);
             cv::String test_path = "/Users/zojja/TUM/Exercise2/Exercise2/data/task2/test/0" + std::to_string(i) + "/";
             vector<String> fn;
             glob(test_path, fn, false);
-            for (int j = 0; j < test_samples_number; j++) {
-                
-               cv::Mat image = imread(fn[i]);
-                // resize to 640*640
-                cv::resize(image, test_resize_image, cv::Size(640, 640), 0, 0, CV_INTER_LINEAR);
-                // 计算HOG descriptor
-                cv::HOGDescriptor hog(cv::Size(640, 640), cv::Size(80, 80), cv::Size(80, 80), cv::Size(80, 80), 9);
-                hog.compute(test_resize_image, test_descriptor);
-                cv::Mat descriptor_mat = cv::Mat(test_descriptor).t();
+            test_labels.push_back(cv::Mat::ones(test_samples, 1, CV_32FC1) * i);
+            
+            for (int j = 0; j < test_samples; j++) {
+                Mat image = imread(fn[j]);
+                test_descriptor = compute_descriptors(image, hogTrain, HOGwinSize);
+                Mat descriptor_mat = cv::Mat(test_descriptor).t();
                 test_descriptors.push_back(descriptor_mat);
             }
         }
         
-        // predict
-        cv::Mat test_result;
+        // Predict Classes
+        Mat test_result;
         random_forest->predict(test_descriptors, test_result);
         cout << "predicting for " + std::to_string(t) + ".th tree is done." << endl;
         
-        std::ofstream outFile;
+        // Save DT
+        ofstream outFile;
         outFile.open("/Users/zojja/TUM/Exercise2/Exercise2/data/task2/rftree_" + std::to_string(t) + "_result.txt");
         
-        for (int i = 0; i < test_samples_number * 6; i++) {
+        for (int i = 0; i < test_samples * num_of_folders; i++) {
             outFile << ((float *) test_result.data)[i] << endl;
         }
         outFile.close();
         
         int counter = 0;
         
-        for (int k = 0; k < test_samples_number * 6 - 1; ++k) {
+        // Print predictions (if values are the same ,prediction is correct, add to counter)
+        for (int k = 0; k < test_samples * num_of_folders - 1; ++k) {
             float value1 = ((float *) test_labels.data)[k];
             float value2 = ((float *) test_result.data)[k];
             fprintf(stdout, "actual class: %f, expected class: %f\n", value1, value2);
@@ -266,14 +213,13 @@ int main( int argc, char** argv ){
             }
         }
         
-        fprintf(stdout, "total classification accuracy: %f\n", counter * 1.f / (test_samples_number * 6));
+        fprintf(stdout, "total classification accuracy: %f\n", counter * 1.f / (test_samples * 6));
         cout << endl;
     }
     
-    
-    int test_samples_number = 10;
-    float vote_all_trees[test_samples_number * 6][num_of_trees];
-    vote_all_trees[test_samples_number * 6][num_of_trees] = {0};
+    //
+    float vote_all_trees[test_samples * num_of_folders][num_of_trees];
+    vote_all_trees[test_samples * num_of_folders][num_of_trees] = {0};
     int tree_index = 0;
     int image_index = 0;
     
@@ -287,7 +233,7 @@ int main( int argc, char** argv ){
         
         while (!rftree.eof()) {
             rftree >> vote_all_trees[image_index][tree_index];
-            if (image_index >= test_samples_number * 6 || tree_index >= num_of_trees) {
+            if (image_index >= test_samples * num_of_folders || tree_index >= num_of_trees) {
                 break;
             }
             image_index = image_index + 1;
@@ -298,23 +244,18 @@ int main( int argc, char** argv ){
     }
     
     // vote
-    
-    cv::Mat vote_labels;
+    Mat vote_labels;
     for (int i = 0; i < num_of_trees; i++) {
-        vote_labels.push_back(cv::Mat::ones(test_samples_number, 1, CV_32FC1) * i);
+        vote_labels.push_back(Mat::ones(test_samples, 1, CV_32FC1) * i);
     }
     
-    // vote_one_tree 100棵树的结果两两比较,统计每一棵树的预测结果在100棵树里出现了多少次
     float vote_one_tree[num_of_trees];
     
-    for (int i = 0; i < test_samples_number * 6; i++) {
+    for (int i = 0; i < test_samples * num_of_folders; i++) {
         for (int j = 0; j < num_of_trees; j++) {
             vote_one_tree[j] = vote_all_trees[i][j];
         }
-        
-        
         int vote_index = vote_for_result(vote_one_tree);
-        //cout << "the classifaction of " + std::to_string(i) + ".th image is " +std::to_string(vote_one_tree[vote_index]);
         
         if (((float *) vote_labels.data)[i] == vote_one_tree[vote_index]) {
             correct_class++;
@@ -322,7 +263,7 @@ int main( int argc, char** argv ){
         
     }
     cout << endl;
-    fprintf(stdout, "total classification accuracy using random forest: %f\n", correct_class * 1.f / (test_samples_number * 6));*/
+    fprintf(stdout, "total classification accuracy using random forest: %f\n", correct_class * 1.f / (test_samples * 6));
     return 0;
 }
 

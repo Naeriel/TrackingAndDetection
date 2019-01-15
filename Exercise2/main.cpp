@@ -70,7 +70,7 @@ int main( int argc, char** argv ){
     descriptors = compute_descriptors(image,hog);
     visualizeHOG(hogImg, descriptors, hog, 1);*/
     
-    //TASK 2: DECISION TREES
+ /*    //TASK 2: DECISION TREES
 
    // Prepare the labels and data for training with HOG Descriptors
     vector<float> train_descriptor;
@@ -124,7 +124,7 @@ int main( int argc, char** argv ){
     fprintf(stdout, "total classification accuracy using decision tree: %f\n", counter * 1.f/60);
     cout<<endl;
 
-    // task 2 ///////////////random forest classifier///////////////
+   // task 2 ///////////////random forest classifier///////////////
     
     cout << endl;
     cout << "Random Forest Classifier." << endl;
@@ -263,7 +263,191 @@ int main( int argc, char** argv ){
         
     }
     cout << endl;
+    fprintf(stdout, "total classification accuracy using random forest: %f\n", correct_class * 1.f / (test_samples * 6));*/
+    
+    //task 3 - object detection
+    
+    
+    cout << endl;
+    cout << "Object detection" << endl;
+    cout << endl;
+    
+    // 3.1 Build test data set using sliding window
+    HOGDescriptor hogTrain(HOGwinSize, HOGblockSize, HOGblockStride, HOGcellSize, HOGnbins);
+    
+    Size window_size = Size(60,60);
+    int window_step = 20;
+    int scale = 1; // if need o be changed -> resize the image?
+    
+    
+    // test images folder
+    String test_path = "/Users/zojja/TUM/Exercise2/Exercise2/data/task3/test/";
+    vector<String> fn;
+    glob(test_path, fn, false);
+    size_t count_test_images = fn.size();
+    
+    vector<Mat> test_images;
+    vector<int> samples_per_image;
+    vector<Rect> sample_rect;
+    
+    int total_samples_num = 0;
+    
+    randomForest Forest[num_of_trees];
+    int correct_class = 15;
+    Mat train_descriptors;
+    Mat train_labels;
+    vector<float> train_descriptor;
+    
+    // Augment and train images
+    for (int i = 0; i < 4; i++) {
+        String train_path = "/Users/zojja/TUM/Exercise2/Exercise2/data/task3/train/0" + std::to_string(i) + "/";
+        vector<String> fn;
+        glob(train_path, fn, false);
+        size_t count = fn.size(); //number of files per folder
+            
+        train_labels.push_back(cv::Mat::ones((int)count, 1, CV_32S) * i);
+            
+        // Each
+        for (int j = 0; j < count; j++) {
+            Mat image = imread(fn[j]);
+            train_descriptor = compute_descriptors(image, hogTrain, HOGwinSize);
+            Mat descriptor_mat = cv::Mat(train_descriptor).t();
+            train_descriptors.push_back(descriptor_mat);
+            //Augment training data with flip, rotation, grayscale
+            for(int k = -1; k <= 1; k++){
+                Mat flipImg;
+                flip(image, flipImg, k);
+                Mat descriptor_mat_flip = cv::Mat(train_descriptor).t();
+                train_descriptors.push_back(descriptor_mat_flip);
+                train_labels.push_back(1);
+            }
+                
+            for(int k = 0; k <= 2; k++){
+                Mat rotImg;
+                rotate(image, rotImg, k);
+                Mat descriptor_mat_rot = cv::Mat(train_descriptor).t();
+                train_descriptors.push_back(descriptor_mat_rot);
+                train_labels.push_back(1);
+            }
+                
+            Mat grayImg;
+            cvtColor(image, grayImg, COLOR_BGR2GRAY );
+            Mat descriptor_mat_gray = cv::Mat(train_descriptor).t();
+            train_descriptors.push_back(descriptor_mat_gray);
+            train_labels.push_back(1);
+        }
+    }
+    
+    train_labels.convertTo(train_labels,CV_32S);
+    Ptr<TrainData> tData = TrainData::create(train_descriptors, ROW_SAMPLE, train_labels);
+    
+    // Create and train Random Forest with 40 trees
+    for(int t = 0; t < 40; t++){
+        Ptr<DTrees> random_forest = Forest[t].creatRF();
+        Forest[t].trainRF(random_forest, tData);
+        
+    }
+    
+    // go through all test images
+    for (int i = 0; i < count_test_images; i++) {
+        
+        Mat image = imread(fn[i]);
+        
+        // cut every test image into windows for testing
+        
+        int x = 0; // x of subimage corner
+        int y = 0; // y of subimage corner
+        int num_samples = 0;
+        
+        while ((y + window_size.height) <= image.size[1]){
+            while ((x + window_size.width) <= image.size[0])
+            {
+                Rect subimg_rect = Rect(x, y, window_size.width, window_size.height);
+                Mat subimage = image(subimg_rect);
+                test_images.push_back(subimage);
+                sample_rect.push_back(subimg_rect);
+                num_samples ++;
+                x += window_step;
+            }
+            y += window_step;
+        }
+        total_samples_num += num_samples;
+        samples_per_image.push_back(num_samples);
+    }
+    
+    // 3.2 Build decision trees using training data set
+    // All the same as in task 2
+    
+   
+    
+    //
+    float vote_all_trees[total_samples_num][num_of_trees];
+    vote_all_trees[total_samples_num][num_of_trees] = { 0 };
+    int tree_index = 0;
+    int image_index = 0;
+    
+    for (int i = 0; i < num_of_trees; i++) {
+        std::ifstream rftree;
+        rftree.open("/Users/zojja/TUM/Exercise2/Exercise2/data/task3/rftree_" + std::to_string(i) + "_result.txt");
+        if (!rftree) {
+            cout << "tree not found." << endl;
+            exit(1);
+        }
+        
+        while (!rftree.eof()) {
+            rftree >> vote_all_trees[image_index][tree_index];
+            if (image_index >= total_samples_num || tree_index >= num_of_trees) {
+                break;
+            }
+            image_index = image_index + 1;
+        }
+        tree_index = tree_index + 1;
+        image_index = 0;
+        rftree.close();
+    }
+    
+    // vote
+    Mat vote_labels;
+    for (int i = 0; i < num_of_trees; i++) {
+        vote_labels.push_back(Mat::ones(test_samples, 1, CV_32FC1) * i);
+    }
+    
+    float vote_one_tree[num_of_trees];
+    
+    for (int i = 0; i < total_samples_num; i++) {
+        for (int j = 0; j < num_of_trees; j++) {
+            vote_one_tree[j] = vote_all_trees[i][j];
+        }
+        int vote_index = vote_for_result(vote_one_tree);
+        
+        if (((float *)vote_labels.data)[i] == vote_one_tree[vote_index]) {
+            correct_class++;
+        }
+        
+    }
+    cout << endl;
     fprintf(stdout, "total classification accuracy using random forest: %f\n", correct_class * 1.f / (test_samples * 6));
+    
+    // 3.3 Go through all predictions - store only ones with value higher than threshold
+    
+/*    // 3.4 Look for intersections inside one image
+    
+    for (int i = 0; i < test_samples; i++)
+    {
+        for (int j = 0; j < samples_per_image.at(i); j++)
+        {
+            for (int k = j; j < samples_per_image.at(i); k++)
+            {
+                //!!!
+                //if sample_rect.at(i*samples_per_image.at(i)+j) intersects with sample_rect.at(i*samples_per_image.at(i) + j)
+                
+                // then save only the one with prediction with higher accuracy!
+            }
+        }
+    }
+
+    }*/
+
     return 0;
 }
 

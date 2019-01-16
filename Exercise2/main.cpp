@@ -429,6 +429,7 @@ int main( int argc, char** argv ){
     fprintf(stdout, "total classification accuracy using random forest: %f\n", correct_class * 1.f / (test_samples * 6));
     
     // 3.3 Go through all predictions - store only ones with value higher than threshold
+	int *pick = non_max_suppression(boundingRect, threshold);
     
 /*    // 3.4 Look for intersections inside one image
     
@@ -447,6 +448,12 @@ int main( int argc, char** argv ){
     }
 
     }*/
+    
+    //Plotting of the boxes after NMS
+	for (int i = 0; i < sizeof(pick); i++) {
+		cv::rectangle(image, (pick[i][0], pick[i][1]), (pick[i][2], pick[i][3]). (0, 255, 0), 2);
+	}
+	cv::imshow("After NMS", image)
 
     return 0;
 }

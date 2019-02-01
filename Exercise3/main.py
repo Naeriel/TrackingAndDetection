@@ -69,6 +69,21 @@ def find_pusher(anchor_pose, coarse_list, coarse_poses, objectclass):
     
     return pusher_list, pusher_pose
 
+def batch_generation(numberofthree):
+    batch = []    
+    for i in range(0, numberofthree):
+        random_data, random_obj, random_index = generate_random_sample()
+        anchor_pose = training_poses[random_data[0]][random_obj[0]][random_index[0]]
+        anchor_list = training_list[random_data[0]][random_obj[0]][random_index[0]]
+        puller_list, puller_pose = find_puller (anchor_pose, coarse_list, coarse_poses, random_obj[0])
+        pusher_list, pusher_pose = find_pusher(anchor_pose, coarse_list, coarse_poses, random_obj[0])
+        batch.append(anchor_list)
+        batch.append(puller_list)
+        batch.append(pusher_list)
+    batch_array = np.stack(batch)
+        
+    return batch_array
+
 
 path = "C:\\Users\\berko\\Desktop\\TDCV\\exercise3\\dataset"
 """
@@ -93,7 +108,7 @@ for i in range(0, len(image_names)):
     loop_list = []
     for j in range(0, 267):
         image = cv2.imread(path + "\\coarse\\" + image_names[i] + "\\coarse" + str(j) + ".png")
-        image = image[:63, :63]
+        image = image[:64, :64]
         image = image - np.average(image)
         image = image / np.std(image)
         loop_list.append(image)
@@ -121,7 +136,7 @@ for i in range(0, len(image_names)):
     loop_list = []
     for j in range(0, 1011):
         image = cv2.imread(path + "\\fine\\" + image_names[i] + "\\fine" + str(j) + ".png")
-        image = image[:63, :63]
+        image = image[:64, :64]
         image = image - np.average(image)
         image = image / np.std(image)
         loop_list.append(image)
@@ -159,7 +174,7 @@ for i in range(0, len(image_names)):
     loop_list = []
     for j in training_split:
         image = cv2.imread(path + "\\real\\" + image_names[i] + "\\real" + str(j) + ".png")
-        image = image[:63, :63]
+        image = image[:64, :64]
         image = image - np.average(image)
         image = image / np.std(image)
         loop_list.append(image)
@@ -204,7 +219,7 @@ for i in range(0, len(image_names)):
     loop_list = []
     for j in test_index:
         image = cv2.imread(path + "\\real\\" + image_names[i] + "\\real" + str(j) + ".png")
-        image = image[:63, :63]
+        image = image[:64, :64]
         image = image - np.average(image)
         image = image / np.std(image)
         loop_list.append(image)
@@ -228,20 +243,97 @@ for i in range(0, len(image_names)):
         test_temp_poses.append(test_poses[0][k])
     test_selected_poses.append(test_temp_poses)
     
-batch = []    
-for i in range(0, 9):
-    random_data, random_obj, random_index = generate_random_sample()
-    anchor_pose = training_poses[random_data[0]][random_obj[0]][random_index[0]]
-    anchor_list = training_list[random_data[0]][random_obj[0]][random_index[0]]
-    puller_list, puller_pose = find_puller (anchor_pose, coarse_list, coarse_poses, random_obj[0])
-    pusher_list, pusher_pose = find_pusher(anchor_pose, coarse_list, coarse_poses, random_obj[0])
-    batch.append(anchor_list)
-    batch.append(puller_list)
-    batch.append(pusher_list)
-    batch_array = np.stack(batch)
+batch = batch_generation(9)
+        
 
 """
 cv2.imshow('', anchor_list)
 cv2.waitKey()
 """
 #exercise 2
+import tensorflow as tf
+
+def CNN_FC_Architecture(batch, mode):
+    
+    conv1 = tf.layers.conv2d (
+                inputs = batch,
+                filters = 16,
+                kernel_size = [8, 8],
+                padding = 'valid',
+                activation = tf.nn.relu
+            )
+    
+    maxpool1 = tf.layers.max_pooling2d (
+                    inputs = conv1, 
+                    pool_size = [2, 2], 
+                    strides = 2
+                )
+    conv2 = tf.layers.conv2d (
+                inputs = maxpool1,
+                filters = 7,
+                kernel_size = [5, 5],
+                padding = 'valid',
+                activation = tf.nn.relu
+            )
+
+    maxpool2 = tf.layers.max_pooling2d (
+                    inputs = conv2, 
+                    pool_size = [2, 2], 
+                    strides = 2
+                )
+    
+#    print(maxpool2)
+    maxpool2_array = tf.reshape(maxpool2, [-1, 12 * 12 * 7])
+    fc = tf.layers.dense(
+            inputs = maxpool2_array,
+            units = 256,
+            activation = tf.nn.relu
+        )
+
+
+    dropout = tf.layers.dropout(
+                inputs = fc, 
+                rate = 0.4, 
+                training = mode == tf.estimator.ModeKeys.TRAIN
+            )
+    
+    descriptor = tf.layers.dense(
+                    inputs = dropout, 
+                    units = 16
+                    )
+    return descriptor
+
+
+
+def calculate_loss(descriptor, margin):
+
+    anchor = descriptor[0::3]
+    puller = descriptor[1::3]
+    pusher = descriptor[2::3]
+    
+    diff_pos = anchor - puller
+    diff_neg = anchor - pusher
+    Ltriplet = np.maximum(0, 1 - tf.square(diff_neg)/(tf.square(dif_pos) + margin))
+    Lpair = tf.maximum(diff_pos)
+    
+    Loss = Ltriplet + Lpair
+    
+    return Loss
+
+
+batchsize = 100
+margin = 0.01
+
+#anchor_placeholder = tf.placeholder(tf.float32, shape=[batchsize, 64, 64, 3], name = "anchor")
+
+
+#anchor_descriptor = CNN_FC_Architecture(anchor_placeholder, tf.estimator.ModeKeys.TRAIN)
+
+descriptor = CNN_FC_Architecture(batch, tf.estimator.ModeKeys.TRAIN)
+loss = calculate_loss(descriptor, margin)
+print(loss)
+
+
+
+
+
